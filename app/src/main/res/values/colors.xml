@@ -2,4 +2,10 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="hazard_orange">#FF3D00</color>
+    <color name="hazard_amber">#FFAB00</color>
+    <color name="viewport_bg">#0F1115</color>
+    <color name="card_dark">#181A20</color>
+    <color name="status_green">#00E676</color>
+    <color name="text_secondary">#9E9E9E</color>
 </resources>
