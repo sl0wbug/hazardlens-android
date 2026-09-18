@@ -36,6 +36,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var exoPlayer: ExoPlayer? = null
     private var currentMode = MODE_CAMERA
+    private var hasSelectedImage = false
+    private var hasSelectedVideo = false
 
     // Android Photo & Video Picker (PhotoPicker API)
     private val pickVisualMediaLauncher = registerForActivityResult(
@@ -93,17 +95,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupActionButtons() {
         binding.btnPickMedia.setOnClickListener {
-            when (currentMode) {
-                MODE_IMAGE -> {
-                    pickVisualMediaLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                }
-                MODE_VIDEO -> {
-                    pickVisualMediaLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
-                    )
-                }
+            launchMediaPicker()
+        }
+
+        binding.btnPlaceholderSelect.setOnClickListener {
+            launchMediaPicker()
+        }
+    }
+
+    private fun launchMediaPicker() {
+        when (currentMode) {
+            MODE_IMAGE -> {
+                pickVisualMediaLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            }
+            MODE_VIDEO -> {
+                pickVisualMediaLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
+                )
             }
         }
     }
@@ -116,7 +126,9 @@ class MainActivity : AppCompatActivity() {
                 binding.previewView.isVisible = true
                 binding.imageView.isVisible = false
                 binding.playerView.isVisible = false
+                binding.layoutPlaceholder.isVisible = false
                 binding.btnPickMedia.isVisible = false
+                binding.overlayView.isVisible = true
 
                 pausePlayer()
                 checkCameraPermissionAndStart()
@@ -124,22 +136,49 @@ class MainActivity : AppCompatActivity() {
             }
             MODE_IMAGE -> {
                 binding.previewView.isVisible = false
-                binding.imageView.isVisible = true
                 binding.playerView.isVisible = false
                 binding.btnPickMedia.isVisible = true
-                binding.btnPickMedia.text = "Pick Road Image"
+                binding.btnPickMedia.text = getString(R.string.action_choose_image)
 
                 pausePlayer()
-                binding.tvStatus.text = "Status: Static Image"
+                if (hasSelectedImage) {
+                    binding.imageView.isVisible = true
+                    binding.layoutPlaceholder.isVisible = false
+                    binding.overlayView.isVisible = true
+                    binding.tvStatus.text = "Status: Image Loaded"
+                } else {
+                    binding.imageView.isVisible = false
+                    binding.layoutPlaceholder.isVisible = true
+                    binding.overlayView.isVisible = false
+                    binding.ivPlaceholderIcon.setImageResource(android.R.drawable.ic_menu_gallery)
+                    binding.tvPlaceholderTitle.text = getString(R.string.placeholder_image_title)
+                    binding.tvPlaceholderDesc.text = getString(R.string.placeholder_image_desc)
+                    binding.btnPlaceholderSelect.text = getString(R.string.action_choose_image)
+                    binding.tvStatus.text = "Status: Ready to Import Image"
+                }
             }
             MODE_VIDEO -> {
                 binding.previewView.isVisible = false
                 binding.imageView.isVisible = false
-                binding.playerView.isVisible = true
                 binding.btnPickMedia.isVisible = true
-                binding.btnPickMedia.text = "Pick Road Video"
+                binding.btnPickMedia.text = getString(R.string.action_choose_video)
 
-                binding.tvStatus.text = "Status: Road Video"
+                if (hasSelectedVideo) {
+                    binding.playerView.isVisible = true
+                    binding.layoutPlaceholder.isVisible = false
+                    binding.overlayView.isVisible = true
+                    exoPlayer?.play()
+                    binding.tvStatus.text = "Status: Video Playing"
+                } else {
+                    binding.playerView.isVisible = false
+                    binding.layoutPlaceholder.isVisible = true
+                    binding.overlayView.isVisible = false
+                    binding.ivPlaceholderIcon.setImageResource(android.R.drawable.ic_media_play)
+                    binding.tvPlaceholderTitle.text = getString(R.string.placeholder_video_title)
+                    binding.tvPlaceholderDesc.text = getString(R.string.placeholder_video_desc)
+                    binding.btnPlaceholderSelect.text = getString(R.string.action_choose_video)
+                    binding.tvStatus.text = "Status: Ready to Import Video"
+                }
             }
         }
     }
@@ -147,12 +186,20 @@ class MainActivity : AppCompatActivity() {
     private fun handleSelectedMedia(uri: Uri) {
         when (currentMode) {
             MODE_IMAGE -> {
+                hasSelectedImage = true
+                binding.layoutPlaceholder.isVisible = false
+                binding.imageView.isVisible = true
+                binding.overlayView.isVisible = true
                 binding.imageView.load(uri) {
                     crossfade(true)
                 }
                 binding.tvStatus.text = "Status: Image Loaded"
             }
             MODE_VIDEO -> {
+                hasSelectedVideo = true
+                binding.layoutPlaceholder.isVisible = false
+                binding.playerView.isVisible = true
+                binding.overlayView.isVisible = true
                 playVideo(uri)
                 binding.tvStatus.text = "Status: Video Playing"
             }

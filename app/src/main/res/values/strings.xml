@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">HazardLens</string>
+    <string name="subtitle_dataset_tagline">Intelligent Road Hazard Detection • Trained on Bangladeshi Local Road Dataset</string>
+    <string name="badge_local_dataset">BD Local Road Dataset</string>
+    <string name="tab_camera">Camera</string>
+    <string name="tab_image">Import Image</string>
+    <string name="tab_video">Import Video</string>
+    <string name="placeholder_image_title">No Road Image Selected</string>
+    <string name="placeholder_image_desc">Import a road photo to detect potholes, speed breakers, and road hazards.</string>
+    <string name="placeholder_video_title">No Road Video Selected</string>
+    <string name="placeholder_video_desc">Import road footage or dashcam video to run sequential hazard detection.</string>
+    <string name="action_choose_image">Select Road Image</string>
+    <string name="action_choose_video">Select Road Video</string>
 </resources>
