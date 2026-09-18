@@ -8,7 +8,71 @@
     android:background="@color/viewport_bg"
     tools:context=".MainActivity">
 
-    <!-- Top Mode Selector Tabs -->
+    <!-- Header Section: App Name & Bangladeshi Dataset Disclaimer -->
+    <LinearLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/card_dark"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvAppTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:letterSpacing="0.02"
+                android:text="@string/app_name"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDatasetBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
+                android:text="@string/badge_local_dataset"
+                android:textColor="@color/status_green"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:lineSpacingExtra="2dp"
+            android:text="@string/subtitle_dataset_tagline"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/headerDivider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#282A32"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerLayout" />
+
+    <!-- Top Mode Selector Tabs (Camera, Import Image, Import Video) -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="0dp"
@@ -16,7 +80,7 @@
         android:background="@color/card_dark"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerDivider"
         app:tabGravity="fill"
         app:tabIndicatorColor="@color/hazard_orange"
         app:tabIndicatorHeight="3dp"
@@ -28,19 +92,19 @@
             android:id="@+id/tabCamera"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Live Camera" />
+            android:text="@string/tab_camera" />
 
         <com.google.android.material.tabs.TabItem
             android:id="@+id/tabImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Static Image" />
+            android:text="@string/tab_image" />
 
         <com.google.android.material.tabs.TabItem
             android:id="@+id/tabVideo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Road Video" />
+            android:text="@string/tab_video" />
     </com.google.android.material.tabs.TabLayout>
 
     <!-- Center Multi-Mode Viewport with Overlay -->
@@ -79,6 +143,60 @@
             app:resize_mode="fit"
             app:use_controller="true" />
 
+        <!-- Interactive Empty State / Placeholder for Image & Video selection -->
+        <LinearLayout
+            android:id="@+id/layoutPlaceholder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/ivPlaceholderIcon"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginBottom="16dp"
+                android:contentDescription="Select Media"
+                app:tint="@color/hazard_amber"
+                app:srcCompat="@android:drawable/ic_menu_gallery" />
+
+            <TextView
+                android:id="@+id/tvPlaceholderTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:text="@string/placeholder_image_title"
+                android:textColor="@color/white"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvPlaceholderDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:gravity="center"
+                android:maxWidth="280dp"
+                android:text="@string/placeholder_image_desc"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPlaceholderSelect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/hazard_orange"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="12dp"
+                android:text="@string/action_choose_image"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+
         <!-- Bounding Box Canvas Overlay Layer (renders on top of all modes) -->
         <com.droidlinkstd.hazardlens.ui.overlay.BoundingBoxOverlay
             android:id="@+id/overlayView"
@@ -107,7 +225,7 @@
             android:layout_marginBottom="10dp"
             android:backgroundTint="@color/hazard_orange"
             android:paddingVertical="12dp"
-            android:text="Pick Media"
+            android:text="@string/action_choose_image"
             android:textColor="@color/white"
             android:textSize="14sp"
             android:textStyle="bold"
