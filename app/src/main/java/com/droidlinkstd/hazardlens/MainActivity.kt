@@ -39,6 +39,8 @@ class MainActivity : AppCompatActivity() {
     private var hasSelectedImage = false
     private var hasSelectedVideo = false
 
+    private var isCameraActive = false
+
     // Android Photo & Video Picker (PhotoPicker API)
     private val pickVisualMediaLauncher = registerForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -57,7 +59,13 @@ class MainActivity : AppCompatActivity() {
         if (isGranted) {
             startCameraPreview()
         } else {
+            isCameraActive = false
             binding.tvStatus.text = "Status: No Camera Permission"
+            if (currentMode == MODE_CAMERA) {
+                binding.previewView.isVisible = false
+                binding.btnStopCamera.isVisible = false
+                binding.layoutPlaceholder.isVisible = true
+            }
         }
     }
 
@@ -76,9 +84,13 @@ class MainActivity : AppCompatActivity() {
 
         setupTabNavigation()
         setupActionButtons()
-        setMockDetections()
 
-        // Default to Camera mode
+        // Clear mock detections so canvas only displays real detections after training
+        binding.overlayView.detections = emptyList()
+        binding.tvDetected.text = "Detected: None"
+        binding.tvLatency.text = "Latency: --"
+
+        // Default to Camera mode (shows "Open Camera" button rather than directly opening camera)
         updateDetectionMode(MODE_CAMERA)
     }
 
@@ -94,12 +106,61 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupActionButtons() {
-        binding.btnPickMedia.setOnClickListener {
-            launchMediaPicker()
+        binding.btnPlaceholderSelect.setOnClickListener {
+            if (currentMode == MODE_CAMERA) {
+                startCameraMode()
+            } else {
+                launchMediaPicker()
+            }
         }
 
-        binding.btnPlaceholderSelect.setOnClickListener {
+        binding.layoutPlaceholder.setOnClickListener {
+            if (currentMode == MODE_CAMERA) {
+                startCameraMode()
+            } else {
+                launchMediaPicker()
+            }
+        }
+
+        binding.btnStopCamera.setOnClickListener {
+            stopCameraMode()
+        }
+
+        binding.imageView.setOnClickListener {
             launchMediaPicker()
+        }
+    }
+
+    private fun startCameraMode() {
+        isCameraActive = true
+        binding.layoutPlaceholder.isVisible = false
+        binding.previewView.isVisible = true
+        binding.btnStopCamera.isVisible = true
+        binding.overlayView.isVisible = true
+        checkCameraPermissionAndStart()
+    }
+
+    private fun stopCameraMode() {
+        isCameraActive = false
+        try {
+            val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+            if (cameraProviderFuture.isDone) {
+                cameraProviderFuture.get().unbindAll()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error unbinding camera", e)
+        }
+
+        if (currentMode == MODE_CAMERA) {
+            binding.previewView.isVisible = false
+            binding.btnStopCamera.isVisible = false
+            binding.layoutPlaceholder.isVisible = true
+            binding.ivPlaceholderIcon.setImageResource(android.R.drawable.ic_menu_camera)
+            binding.tvPlaceholderTitle.text = getString(R.string.placeholder_camera_title)
+            binding.tvPlaceholderDesc.text = getString(R.string.placeholder_camera_desc)
+            binding.btnPlaceholderSelect.text = getString(R.string.action_open_camera)
+            binding.overlayView.isVisible = false
+            binding.tvStatus.text = "Status: Idle"
         }
     }
 
@@ -123,24 +184,35 @@ class MainActivity : AppCompatActivity() {
 
         when (mode) {
             MODE_CAMERA -> {
-                binding.previewView.isVisible = true
-                binding.imageView.isVisible = false
-                binding.playerView.isVisible = false
-                binding.layoutPlaceholder.isVisible = false
-                binding.btnPickMedia.isVisible = false
-                binding.overlayView.isVisible = true
-
                 pausePlayer()
-                checkCameraPermissionAndStart()
-                binding.tvStatus.text = "Status: Live Camera"
+                if (isCameraActive) {
+                    binding.previewView.isVisible = true
+                    binding.layoutPlaceholder.isVisible = false
+                    binding.btnStopCamera.isVisible = true
+                    binding.overlayView.isVisible = true
+                    checkCameraPermissionAndStart()
+                    binding.tvStatus.text = "Status: Camera Active"
+                } else {
+                    binding.previewView.isVisible = false
+                    binding.playerView.isVisible = false
+                    binding.imageView.isVisible = false
+                    binding.btnStopCamera.isVisible = false
+                    binding.layoutPlaceholder.isVisible = true
+                    binding.overlayView.isVisible = false
+                    binding.ivPlaceholderIcon.setImageResource(android.R.drawable.ic_menu_camera)
+                    binding.tvPlaceholderTitle.text = getString(R.string.placeholder_camera_title)
+                    binding.tvPlaceholderDesc.text = getString(R.string.placeholder_camera_desc)
+                    binding.btnPlaceholderSelect.text = getString(R.string.action_open_camera)
+                    binding.tvStatus.text = "Status: Idle"
+                }
             }
             MODE_IMAGE -> {
+                stopCameraMode()
+                pausePlayer()
+                binding.btnStopCamera.isVisible = false
                 binding.previewView.isVisible = false
                 binding.playerView.isVisible = false
-                binding.btnPickMedia.isVisible = true
-                binding.btnPickMedia.text = getString(R.string.action_choose_image)
 
-                pausePlayer()
                 if (hasSelectedImage) {
                     binding.imageView.isVisible = true
                     binding.layoutPlaceholder.isVisible = false
@@ -158,10 +230,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             MODE_VIDEO -> {
+                stopCameraMode()
+                binding.btnStopCamera.isVisible = false
                 binding.previewView.isVisible = false
                 binding.imageView.isVisible = false
-                binding.btnPickMedia.isVisible = true
-                binding.btnPickMedia.text = getString(R.string.action_choose_video)
 
                 if (hasSelectedVideo) {
                     binding.playerView.isVisible = true
@@ -266,27 +338,9 @@ class MainActivity : AppCompatActivity() {
         binding.playerView.player = null
     }
 
-    /**
-     * Injects mock detections into the overlay view to test canvas rendering immediately.
-     */
-    private fun setMockDetections() {
-        val sampleDetections = listOf(
-            Detection(
-                boundingBox = RectF(0.15f, 0.42f, 0.55f, 0.68f),
-                label = "Pothole",
-                confidence = 0.88f
-            ),
-            Detection(
-                boundingBox = RectF(0.58f, 0.58f, 0.92f, 0.84f),
-                label = "Speed Breaker",
-                confidence = 0.94f
-            )
-        )
-        binding.overlayView.detections = sampleDetections
-    }
-
     override fun onStop() {
         super.onStop()
+        stopCameraMode()
         pausePlayer()
     }
 

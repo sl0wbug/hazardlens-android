@@ -11,4 +11,8 @@
     <string name="placeholder_video_desc">Import road footage or dashcam video to run sequential hazard detection.</string>
     <string name="action_choose_image">Select Road Image</string>
     <string name="action_choose_video">Select Road Video</string>
+    <string name="placeholder_camera_title">Camera Inactive</string>
+    <string name="placeholder_camera_desc">Tap below to open your camera and start real-time road hazard detection.</string>
+    <string name="action_open_camera">Open Camera</string>
+    <string name="action_stop_camera">Stop Camera</string>
 </resources>
