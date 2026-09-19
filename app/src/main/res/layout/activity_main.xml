@@ -89,19 +89,16 @@
         app:tabTextColor="@color/text_secondary">
 
         <com.google.android.material.tabs.TabItem
-            android:id="@+id/tabCamera"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/tab_camera" />
 
         <com.google.android.material.tabs.TabItem
-            android:id="@+id/tabImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/tab_image" />
 
         <com.google.android.material.tabs.TabItem
-            android:id="@+id/tabVideo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/tab_video" />
@@ -202,6 +199,26 @@
             android:id="@+id/overlayView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+
+        <!-- Stop Camera Button (visible only when live camera is running) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStopCamera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_margin="16dp"
+            android:backgroundTint="#B3181A20"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="8dp"
+            android:text="@string/action_stop_camera"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:cornerRadius="20dp"
+            app:icon="@android:drawable/ic_menu_close_clear_cancel"
+            app:iconTint="@color/hazard_orange"
+            app:strokeColor="#40FFFFFF"
+            app:strokeWidth="1dp" />
     </FrameLayout>
 
     <!-- Bottom Action & Telemetry Area -->
@@ -216,22 +233,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
-
-        <!-- Mode Action Button (visible for Image and Video tabs) -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPickMedia"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:backgroundTint="@color/hazard_orange"
-            android:paddingVertical="12dp"
-            android:text="@string/action_choose_image"
-            android:textColor="@color/white"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:visibility="gone"
-            app:cornerRadius="10dp"
-            app:iconGravity="textStart" />
 
         <!-- Telemetry Card Bar -->
         <com.google.android.material.card.MaterialCardView
@@ -265,7 +266,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="12dp"
-                    android:text="Status: Active"
+                    android:text="Status: Idle"
                     android:textColor="@color/white"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -281,7 +282,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="12dp"
-                    android:text="Latency: 32ms"
+                    android:text="Latency: --"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
 
@@ -298,7 +299,7 @@
                     android:layout_weight="1"
                     android:ellipsize="end"
                     android:singleLine="true"
-                    android:text="Detected: Pothole (92%)"
+                    android:text="Detected: None"
                     android:textColor="@color/hazard_amber"
                     android:textSize="12sp"
                     android:textStyle="bold" />
