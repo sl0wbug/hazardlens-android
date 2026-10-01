@@ -15,4 +15,16 @@
     <string name="placeholder_camera_desc">Tap below to open your camera and start real-time road hazard detection.</string>
     <string name="action_open_camera">Open Camera</string>
     <string name="action_stop_camera">Stop Camera</string>
+    <string name="action_change_media">Change Media</string>
+    <string name="action_toggle_flash">Toggle Flashlight</string>
+    <string name="status_idle">Status: Idle</string>
+    <string name="status_camera_active">Status: Camera Active</string>
+    <string name="status_image_loaded">Status: Image Loaded</string>
+    <string name="status_video_playing">Status: Video Playing</string>
+    <string name="status_no_permission">Status: No Camera Permission</string>
+    <string name="hazard_alert_title">ROAD HAZARD DETECTED</string>
+    <string name="filter_confidence_low">Recall (30%)</string>
+    <string name="filter_confidence_mid">Balanced (50%)</string>
+    <string name="filter_confidence_high">Strict (70%)</string>
+    <string name="dialog_specs_title">System &amp; Architecture Specs</string>
 </resources>
