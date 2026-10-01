@@ -4,8 +4,15 @@
     <color name="white">#FFFFFFFF</color>
     <color name="hazard_orange">#FF3D00</color>
     <color name="hazard_amber">#FFAB00</color>
-    <color name="viewport_bg">#0F1115</color>
-    <color name="card_dark">#181A20</color>
+    <color name="hazard_red">#FF1744</color>
+    <color name="accent_cyan">#00E5FF</color>
+    <color name="viewport_bg">#0D0F14</color>
+    <color name="card_dark">#171922</color>
+    <color name="card_dark_elevated">#20232E</color>
+    <color name="card_stroke">#2D313E</color>
     <color name="status_green">#00E676</color>
     <color name="text_secondary">#9E9E9E</color>
+    <color name="text_muted">#686E7D</color>
+    <color name="hud_chip_active">#FF3D00</color>
+    <color name="hud_chip_inactive">#1D202B</color>
 </resources>

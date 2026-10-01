@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -22,6 +23,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import coil.load
 import com.droidlinkstd.hazardlens.data.Detection
 import com.droidlinkstd.hazardlens.databinding.ActivityMainBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 
 class MainActivity : AppCompatActivity() {
@@ -35,6 +37,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private var exoPlayer: ExoPlayer? = null
+    private var camera: Camera? = null
+    private var isFlashOn = false
     private var currentMode = MODE_CAMERA
     private var hasSelectedImage = false
     private var hasSelectedVideo = false
@@ -60,10 +64,11 @@ class MainActivity : AppCompatActivity() {
             startCameraPreview()
         } else {
             isCameraActive = false
-            binding.tvStatus.text = "Status: No Camera Permission"
+            binding.tvStatus.text = getString(R.string.status_no_permission)
             if (currentMode == MODE_CAMERA) {
                 binding.previewView.isVisible = false
                 binding.btnStopCamera.isVisible = false
+                binding.btnFlashToggle.isVisible = false
                 binding.layoutPlaceholder.isVisible = true
             }
         }
@@ -84,13 +89,14 @@ class MainActivity : AppCompatActivity() {
 
         setupTabNavigation()
         setupActionButtons()
+        setupSensitivityControls()
 
         // Clear mock detections so canvas only displays real detections after training
         binding.overlayView.detections = emptyList()
         binding.tvDetected.text = "Detected: None"
         binding.tvLatency.text = "Latency: --"
 
-        // Default to Camera mode (shows "Open Camera" button rather than directly opening camera)
+        // Default to Camera mode (shows "Open Camera" placeholder)
         updateDetectionMode(MODE_CAMERA)
     }
 
@@ -103,6 +109,22 @@ class MainActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
+    }
+
+    private fun setupSensitivityControls() {
+        binding.chipGroupConfidence.setOnCheckedStateChangeListener { _, checkedIds ->
+            when {
+                checkedIds.contains(R.id.chipConfidence30) -> {
+                    binding.overlayView.minConfidence = 0.30f
+                }
+                checkedIds.contains(R.id.chipConfidence50) -> {
+                    binding.overlayView.minConfidence = 0.50f
+                }
+                checkedIds.contains(R.id.chipConfidence70) -> {
+                    binding.overlayView.minConfidence = 0.70f
+                }
+            }
+        }
     }
 
     private fun setupActionButtons() {
@@ -126,9 +148,60 @@ class MainActivity : AppCompatActivity() {
             stopCameraMode()
         }
 
+        binding.btnFlashToggle.setOnClickListener {
+            toggleFlashlight()
+        }
+
+        binding.btnChangeMedia.setOnClickListener {
+            launchMediaPicker()
+        }
+
+        binding.btnInfoSpecs.setOnClickListener {
+            showArchitectureSpecsDialog()
+        }
+
         binding.imageView.setOnClickListener {
             launchMediaPicker()
         }
+    }
+
+    private fun showArchitectureSpecsDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.dialog_specs_title))
+            .setMessage(
+                """
+                • System Architecture:
+                   On-device Mobile Edge Computer Vision (Zero Cloud Dependency for Highway Reliability)
+                
+                • Targeted Domain & Classes (BD Road Dataset):
+                   1. Potholes (Waterlogged, Dry & Deep Pits)
+                   2. Unmarked Speed Breakers & Asphalt Humps
+                   3. Open Drainage / Broken Manholes
+                   4. Severe Longitudinal Road Cracks
+                
+                • Vision Execution Pipeline:
+                   - Ingestion: CameraX ImageAnalysis (YUV_420_888 / RGBA)
+                   - Preprocessing: Letterbox 640x640 Normalization
+                   - Core Model: Lightweight YOLO (YOLOv8n / YOLOv11n) converted to TFLite (FP16/INT8)
+                   - Accelerator: Android NNAPI / GPU Delegate
+                   - Latency SLA: 35-50ms (< 25MB footprint)
+                   - Output: Real-time Bounding Box HUD & Proximity Warning
+                """.trimIndent()
+            )
+            .setPositiveButton("Understood", null)
+            .show()
+    }
+
+    private fun toggleFlashlight() {
+        val cam = camera ?: return
+        if (!cam.cameraInfo.hasFlashUnit()) {
+            return
+        }
+        isFlashOn = !isFlashOn
+        cam.cameraControl.enableTorch(isFlashOn)
+        binding.btnFlashToggle.setIconTintResource(
+            if (isFlashOn) R.color.hazard_amber else R.color.white
+        )
     }
 
     private fun startCameraMode() {
@@ -142,6 +215,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopCameraMode() {
         isCameraActive = false
+        if (isFlashOn) {
+            camera?.cameraControl?.enableTorch(false)
+            isFlashOn = false
+            binding.btnFlashToggle.setIconTintResource(R.color.white)
+        }
+        binding.btnFlashToggle.isVisible = false
+        camera = null
+
         try {
             val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
             if (cameraProviderFuture.isDone) {
@@ -160,7 +241,7 @@ class MainActivity : AppCompatActivity() {
             binding.tvPlaceholderDesc.text = getString(R.string.placeholder_camera_desc)
             binding.btnPlaceholderSelect.text = getString(R.string.action_open_camera)
             binding.overlayView.isVisible = false
-            binding.tvStatus.text = "Status: Idle"
+            binding.tvStatus.text = getString(R.string.status_idle)
         }
     }
 
@@ -185,31 +266,35 @@ class MainActivity : AppCompatActivity() {
         when (mode) {
             MODE_CAMERA -> {
                 pausePlayer()
+                binding.btnChangeMedia.isVisible = false
+
                 if (isCameraActive) {
                     binding.previewView.isVisible = true
                     binding.layoutPlaceholder.isVisible = false
                     binding.btnStopCamera.isVisible = true
                     binding.overlayView.isVisible = true
                     checkCameraPermissionAndStart()
-                    binding.tvStatus.text = "Status: Camera Active"
+                    binding.tvStatus.text = getString(R.string.status_camera_active)
                 } else {
                     binding.previewView.isVisible = false
                     binding.playerView.isVisible = false
                     binding.imageView.isVisible = false
                     binding.btnStopCamera.isVisible = false
+                    binding.btnFlashToggle.isVisible = false
                     binding.layoutPlaceholder.isVisible = true
                     binding.overlayView.isVisible = false
                     binding.ivPlaceholderIcon.setImageResource(android.R.drawable.ic_menu_camera)
                     binding.tvPlaceholderTitle.text = getString(R.string.placeholder_camera_title)
                     binding.tvPlaceholderDesc.text = getString(R.string.placeholder_camera_desc)
                     binding.btnPlaceholderSelect.text = getString(R.string.action_open_camera)
-                    binding.tvStatus.text = "Status: Idle"
+                    binding.tvStatus.text = getString(R.string.status_idle)
                 }
             }
             MODE_IMAGE -> {
                 stopCameraMode()
                 pausePlayer()
                 binding.btnStopCamera.isVisible = false
+                binding.btnFlashToggle.isVisible = false
                 binding.previewView.isVisible = false
                 binding.playerView.isVisible = false
 
@@ -217,11 +302,13 @@ class MainActivity : AppCompatActivity() {
                     binding.imageView.isVisible = true
                     binding.layoutPlaceholder.isVisible = false
                     binding.overlayView.isVisible = true
-                    binding.tvStatus.text = "Status: Image Loaded"
+                    binding.btnChangeMedia.isVisible = true
+                    binding.tvStatus.text = getString(R.string.status_image_loaded)
                 } else {
                     binding.imageView.isVisible = false
                     binding.layoutPlaceholder.isVisible = true
                     binding.overlayView.isVisible = false
+                    binding.btnChangeMedia.isVisible = false
                     binding.ivPlaceholderIcon.setImageResource(android.R.drawable.ic_menu_gallery)
                     binding.tvPlaceholderTitle.text = getString(R.string.placeholder_image_title)
                     binding.tvPlaceholderDesc.text = getString(R.string.placeholder_image_desc)
@@ -232,6 +319,7 @@ class MainActivity : AppCompatActivity() {
             MODE_VIDEO -> {
                 stopCameraMode()
                 binding.btnStopCamera.isVisible = false
+                binding.btnFlashToggle.isVisible = false
                 binding.previewView.isVisible = false
                 binding.imageView.isVisible = false
 
@@ -239,12 +327,14 @@ class MainActivity : AppCompatActivity() {
                     binding.playerView.isVisible = true
                     binding.layoutPlaceholder.isVisible = false
                     binding.overlayView.isVisible = true
+                    binding.btnChangeMedia.isVisible = true
                     exoPlayer?.play()
-                    binding.tvStatus.text = "Status: Video Playing"
+                    binding.tvStatus.text = getString(R.string.status_video_playing)
                 } else {
                     binding.playerView.isVisible = false
                     binding.layoutPlaceholder.isVisible = true
                     binding.overlayView.isVisible = false
+                    binding.btnChangeMedia.isVisible = false
                     binding.ivPlaceholderIcon.setImageResource(android.R.drawable.ic_media_play)
                     binding.tvPlaceholderTitle.text = getString(R.string.placeholder_video_title)
                     binding.tvPlaceholderDesc.text = getString(R.string.placeholder_video_desc)
@@ -262,18 +352,20 @@ class MainActivity : AppCompatActivity() {
                 binding.layoutPlaceholder.isVisible = false
                 binding.imageView.isVisible = true
                 binding.overlayView.isVisible = true
+                binding.btnChangeMedia.isVisible = true
                 binding.imageView.load(uri) {
                     crossfade(true)
                 }
-                binding.tvStatus.text = "Status: Image Loaded"
+                binding.tvStatus.text = getString(R.string.status_image_loaded)
             }
             MODE_VIDEO -> {
                 hasSelectedVideo = true
                 binding.layoutPlaceholder.isVisible = false
                 binding.playerView.isVisible = true
                 binding.overlayView.isVisible = true
+                binding.btnChangeMedia.isVisible = true
                 playVideo(uri)
-                binding.tvStatus.text = "Status: Video Playing"
+                binding.tvStatus.text = getString(R.string.status_video_playing)
             }
         }
     }
@@ -301,8 +393,10 @@ class MainActivity : AppCompatActivity() {
 
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview)
-                binding.tvStatus.text = "Status: Camera Active"
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview)
+                binding.tvStatus.text = getString(R.string.status_camera_active)
+                val hasFlash = camera?.cameraInfo?.hasFlashUnit() == true
+                binding.btnFlashToggle.isVisible = hasFlash
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
                 binding.tvStatus.text = "Status: Cam Error"

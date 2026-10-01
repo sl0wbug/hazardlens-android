@@ -30,27 +30,46 @@ class BoundingBoxOverlay @JvmOverloads constructor(
             invalidate()
         }
 
+    var minConfidence: Float = 0.30f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var showHudReticle: Boolean = true
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     private val density = resources.displayMetrics.density
 
-    // Paint for main bounding box outline (4dp bright red-orange stroke)
+    // Paint for main bounding box outline
     private val boxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 4f * density
-        color = Color.parseColor("#FF3D00") // High-contrast safety orange-red
+        strokeWidth = 3.5f * density
+        color = Color.parseColor("#FF3D00")
     }
 
     // Paint for corner accent brackets (HUD effect)
     private val cornerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 6f * density
+        strokeWidth = 5f * density
         strokeCap = Paint.Cap.ROUND
-        color = Color.parseColor("#FFD600") // Vibrant warning amber
+        color = Color.parseColor("#FFD600")
+    }
+
+    // Paint for subtle center reticle / crosshairs
+    private val reticlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.2f * density
+        color = Color.parseColor("#33FFFFFF")
     }
 
     // Paint for badge background
     private val badgeBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.parseColor("#D9181818") // Semi-transparent dark surface
+        color = Color.parseColor("#E613151B")
     }
 
     // Paint for badge stroke/border
@@ -80,11 +99,21 @@ class BoundingBoxOverlay @JvmOverloads constructor(
         val viewWidth = width.toFloat()
         val viewHeight = height.toFloat()
 
-        if (viewWidth <= 0 || viewHeight <= 0 || detections.isEmpty()) {
+        if (viewWidth <= 0 || viewHeight <= 0) {
             return
         }
 
-        for (detection in detections) {
+        // Draw subtle HUD targeting crosshairs when enabled and no detections yet
+        val filteredDetections = detections.filter { it.confidence >= minConfidence }
+        if (showHudReticle && filteredDetections.isEmpty()) {
+            val centerX = viewWidth / 2f
+            val centerY = viewHeight / 2f
+            val reticleSize = 20f * density
+            canvas.drawLine(centerX - reticleSize, centerY, centerX + reticleSize, centerY, reticlePaint)
+            canvas.drawLine(centerX, centerY - reticleSize, centerX, centerY + reticleSize, reticlePaint)
+        }
+
+        for (detection in filteredDetections) {
             // Map normalized 0.0-1.0 coordinates to view dimensions
             val left = detection.boundingBox.left * viewWidth
             val top = detection.boundingBox.top * viewHeight
@@ -97,6 +126,17 @@ class BoundingBoxOverlay @JvmOverloads constructor(
                 max(left, right),
                 max(top, bottom)
             )
+
+            // Dynamic color coding based on hazard class severity
+            val highlightColor = when {
+                detection.label.contains("Pothole", ignoreCase = true) ||
+                detection.label.contains("Manhole", ignoreCase = true) -> Color.parseColor("#FF1744")
+                detection.label.contains("Speed", ignoreCase = true) ||
+                detection.label.contains("Breaker", ignoreCase = true) -> Color.parseColor("#FFAB00")
+                else -> Color.parseColor("#FF3D00")
+            }
+            boxPaint.color = highlightColor
+            badgeBorderPaint.color = highlightColor
 
             // 1. Draw Bounding Rectangle
             canvas.drawRect(rect, boxPaint)

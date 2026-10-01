@@ -8,7 +8,7 @@
     android:background="@color/viewport_bg"
     tools:context=".MainActivity">
 
-    <!-- Header Section: App Name & Bangladeshi Dataset Disclaimer -->
+    <!-- Header Section: App Title, Dataset Badge & Specs Info Button -->
     <LinearLayout
         android:id="@+id/headerLayout"
         android:layout_width="0dp"
@@ -28,6 +28,14 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="HazardLens Icon"
+                android:src="@drawable/ic_hazard_triangle"
+                app:tint="@color/hazard_orange" />
+
             <TextView
                 android:id="@+id/tvAppTitle"
                 android:layout_width="0dp"
@@ -43,6 +51,7 @@
                 android:id="@+id/tvDatasetBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="10dp"
                 android:background="@drawable/bg_badge"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp"
@@ -50,6 +59,23 @@
                 android:textColor="@color/status_green"
                 android:textSize="11sp"
                 android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnInfoSpecs"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:contentDescription="View System Specs"
+                android:insetLeft="0dp"
+                android:insetTop="0dp"
+                android:insetRight="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:icon="@drawable/ic_info_circle"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="20dp"
+                app:iconTint="@color/text_secondary" />
         </LinearLayout>
 
         <TextView
@@ -67,7 +93,7 @@
         android:id="@+id/headerDivider"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="#282A32"
+        android:background="@color/card_stroke"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/headerLayout" />
@@ -104,7 +130,7 @@
             android:text="@string/tab_video" />
     </com.google.android.material.tabs.TabLayout>
 
-    <!-- Center Multi-Mode Viewport with Overlay -->
+    <!-- Center Multi-Mode Viewport with Overlay & Quick HUD Controls -->
     <FrameLayout
         android:id="@+id/viewportContainer"
         android:layout_width="0dp"
@@ -140,7 +166,7 @@
             app:resize_mode="fit"
             app:use_controller="true" />
 
-        <!-- Interactive Empty State / Placeholder for Image & Video selection -->
+        <!-- Interactive Empty State / Placeholder for Modes -->
         <LinearLayout
             android:id="@+id/layoutPlaceholder"
             android:layout_width="match_parent"
@@ -156,8 +182,8 @@
                 android:layout_height="64dp"
                 android:layout_marginBottom="16dp"
                 android:contentDescription="Select Media"
-                app:tint="@color/hazard_amber"
-                app:srcCompat="@android:drawable/ic_menu_gallery" />
+                app:srcCompat="@android:drawable/ic_menu_gallery"
+                app:tint="@color/hazard_amber" />
 
             <TextView
                 android:id="@+id/tvPlaceholderTitle"
@@ -200,109 +226,279 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <!-- Stop Camera Button (visible only when live camera is running) -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnStopCamera"
+        <!-- Top-Left Floating Hazard Alert Banner -->
+        <LinearLayout
+            android:id="@+id/layoutHazardAlert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_margin="14dp"
+            android:background="@drawable/bg_alert_banner"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="7dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="6dp"
+                android:contentDescription="Hazard Alert"
+                android:src="@drawable/ic_hazard_triangle"
+                app:tint="@color/hazard_red" />
+
+            <TextView
+                android:id="@+id/tvAlertBannerText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/hazard_alert_title"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Top-Right Floating HUD Action Controls -->
+        <LinearLayout
+            android:id="@+id/layoutHudActions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="top|end"
-            android:layout_margin="16dp"
-            android:backgroundTint="#B3181A20"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="8dp"
-            android:text="@string/action_stop_camera"
-            android:textColor="@color/white"
-            android:textSize="12sp"
-            android:visibility="gone"
-            app:cornerRadius="20dp"
-            app:icon="@android:drawable/ic_menu_close_clear_cancel"
-            app:iconTint="@color/hazard_orange"
-            app:strokeColor="#40FFFFFF"
-            app:strokeWidth="1dp" />
+            android:layout_margin="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Flashlight / Torch Toggle (Camera Mode) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFlashToggle"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="#CC1B1E26"
+                android:contentDescription="@string/action_toggle_flash"
+                android:insetLeft="0dp"
+                android:insetTop="0dp"
+                android:insetRight="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:visibility="gone"
+                app:cornerRadius="20dp"
+                app:icon="@drawable/ic_flashlight_toggle"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="20dp"
+                app:iconTint="@color/white"
+                app:strokeColor="#33FFFFFF"
+                app:strokeWidth="1dp" />
+
+            <!-- Change Media Button (Image / Video Mode) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnChangeMedia"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="#CC1B1E26"
+                android:contentDescription="@string/action_change_media"
+                android:insetLeft="0dp"
+                android:insetTop="0dp"
+                android:insetRight="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:visibility="gone"
+                app:cornerRadius="20dp"
+                app:icon="@drawable/ic_change_media"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="20dp"
+                app:iconTint="@color/white"
+                app:strokeColor="#33FFFFFF"
+                app:strokeWidth="1dp" />
+
+            <!-- Stop Camera Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStopCamera"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#D9181A20"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="7dp"
+                android:text="@string/action_stop_camera"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:visibility="gone"
+                app:cornerRadius="20dp"
+                app:icon="@android:drawable/ic_menu_close_clear_cancel"
+                app:iconSize="16dp"
+                app:iconTint="@color/hazard_orange"
+                app:strokeColor="#40FFFFFF"
+                app:strokeWidth="1dp" />
+        </LinearLayout>
     </FrameLayout>
 
-    <!-- Bottom Action & Telemetry Area -->
+    <!-- Bottom Action & Telemetry Control Deck -->
     <LinearLayout
         android:id="@+id/bottomControlsLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="@color/card_dark"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
-        android:paddingTop="8dp"
+        android:paddingTop="10dp"
         android:paddingBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <!-- Telemetry Card Bar -->
+        <!-- Telemetry Card -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardTelemetry"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/card_dark"
+            app:cardBackgroundColor="@color/card_dark_elevated"
             app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            app:strokeColor="#2B2D33"
+            app:cardElevation="2dp"
+            app:strokeColor="@color/card_stroke"
             app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
+                android:orientation="vertical"
                 android:paddingHorizontal="14dp"
-                android:paddingVertical="12dp">
+                android:paddingVertical="10dp">
 
-                <!-- Live Status Indicator -->
-                <View
-                    android:id="@+id/indicatorStatus"
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/indicator_circle" />
-
-                <TextView
-                    android:id="@+id/tvStatus"
-                    android:layout_width="wrap_content"
+                <!-- Row 1: Live Status, Latency & Detected Counter -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
-                    android:text="Status: Idle"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
+                    <!-- Live Status Indicator -->
+                    <View
+                        android:id="@+id/indicatorStatus"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/indicator_circle" />
+
+                    <TextView
+                        android:id="@+id/tvStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
+                        android:text="@string/status_idle"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="12dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@color/card_stroke" />
+
+                    <TextView
+                        android:id="@+id/tvLatency"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
+                        android:text="Latency: --"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="12dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@color/card_stroke" />
+
+                    <TextView
+                        android:id="@+id/tvDetected"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:singleLine="true"
+                        android:text="Detected: None"
+                        android:textColor="@color/hazard_amber"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Divider between Telemetry & Filter Controls -->
                 <View
-                    android:layout_width="1dp"
-                    android:layout_height="14dp"
-                    android:layout_marginEnd="12dp"
-                    android:background="#3A3D46" />
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="8dp"
+                    android:background="@color/card_stroke" />
 
-                <TextView
-                    android:id="@+id/tvLatency"
-                    android:layout_width="wrap_content"
+                <!-- Row 2: Sensitivity Filter Chips -->
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="12dp"
-                    android:text="Latency: --"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="14dp"
-                    android:layout_marginEnd="12dp"
-                    android:background="#3A3D46" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
+                        android:letterSpacing="0.02"
+                        android:text="Sensitivity:"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvDetected"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:singleLine="true"
-                    android:text="Detected: None"
-                    android:textColor="@color/hazard_amber"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipGroupConfidence"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipConfidence30"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/filter_confidence_low"
+                            android:textColor="@color/white"
+                            android:textSize="11sp"
+                            app:chipBackgroundColor="@color/hud_chip_inactive"
+                            app:chipCornerRadius="14dp"
+                            app:chipStrokeColor="@color/card_stroke"
+                            app:chipStrokeWidth="1dp" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipConfidence50"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="@string/filter_confidence_mid"
+                            android:textColor="@color/white"
+                            android:textSize="11sp"
+                            app:chipBackgroundColor="@color/hud_chip_inactive"
+                            app:chipCornerRadius="14dp"
+                            app:chipStrokeColor="@color/card_stroke"
+                            app:chipStrokeWidth="1dp" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipConfidence70"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/filter_confidence_high"
+                            android:textColor="@color/white"
+                            android:textSize="11sp"
+                            app:chipBackgroundColor="@color/hud_chip_inactive"
+                            app:chipCornerRadius="14dp"
+                            app:chipStrokeColor="@color/card_stroke"
+                            app:chipStrokeWidth="1dp" />
+                    </com.google.android.material.chip.ChipGroup>
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
