@@ -42,6 +42,18 @@ class BoundingBoxOverlay @JvmOverloads constructor(
             invalidate()
         }
 
+    var sourceWidth: Int = 0
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var sourceHeight: Int = 0
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     private val density = resources.displayMetrics.density
 
     // Paint for main bounding box outline
@@ -113,12 +125,24 @@ class BoundingBoxOverlay @JvmOverloads constructor(
             canvas.drawLine(centerX, centerY - reticleSize, centerX, centerY + reticleSize, reticlePaint)
         }
 
+        // Content viewport calculation (maps aspect ratio precisely when source dimensions are provided)
+        val contentRect = if (sourceWidth > 0 && sourceHeight > 0) {
+            val scale = min(viewWidth / sourceWidth.toFloat(), viewHeight / sourceHeight.toFloat())
+            val fittedW = sourceWidth * scale
+            val fittedH = sourceHeight * scale
+            val cLeft = (viewWidth - fittedW) / 2f
+            val cTop = (viewHeight - fittedH) / 2f
+            RectF(cLeft, cTop, cLeft + fittedW, cTop + fittedH)
+        } else {
+            RectF(0f, 0f, viewWidth, viewHeight)
+        }
+
         for (detection in filteredDetections) {
-            // Map normalized 0.0-1.0 coordinates to view dimensions
-            val left = detection.boundingBox.left * viewWidth
-            val top = detection.boundingBox.top * viewHeight
-            val right = detection.boundingBox.right * viewWidth
-            val bottom = detection.boundingBox.bottom * viewHeight
+            // Map normalized 0.0-1.0 coordinates to content viewport dimensions
+            val left = contentRect.left + (detection.boundingBox.left * contentRect.width())
+            val top = contentRect.top + (detection.boundingBox.top * contentRect.height())
+            val right = contentRect.left + (detection.boundingBox.right * contentRect.width())
+            val bottom = contentRect.top + (detection.boundingBox.bottom * contentRect.height())
 
             val rect = RectF(
                 min(left, right),

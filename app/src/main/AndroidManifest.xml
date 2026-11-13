@@ -29,6 +29,7 @@
         android:theme="@style/Theme.HazardLens">
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
