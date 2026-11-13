@@ -369,7 +369,7 @@
                 android:paddingHorizontal="14dp"
                 android:paddingVertical="10dp">
 
-                <!-- Row 1: Live Status, Latency & Detected Counter -->
+                <!-- Row 1: Live Status & Latency -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -386,9 +386,11 @@
 
                     <TextView
                         android:id="@+id/tvStatus"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="10dp"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:singleLine="true"
                         android:text="@string/status_idle"
                         android:textColor="@color/white"
                         android:textSize="12sp"
@@ -397,36 +399,30 @@
                     <View
                         android:layout_width="1dp"
                         android:layout_height="12dp"
-                        android:layout_marginEnd="10dp"
+                        android:layout_marginHorizontal="10dp"
                         android:background="@color/card_stroke" />
 
                     <TextView
                         android:id="@+id/tvLatency"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="10dp"
                         android:text="Latency: --"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="12dp"
-                        android:layout_marginEnd="10dp"
-                        android:background="@color/card_stroke" />
-
-                    <TextView
-                        android:id="@+id/tvDetected"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:ellipsize="end"
-                        android:singleLine="true"
-                        android:text="Detected: None"
-                        android:textColor="@color/hazard_amber"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
                 </LinearLayout>
+
+                <!-- Row 2: Detected Hazards Summary (Full Width, never cut off) -->
+                <TextView
+                    android:id="@+id/tvDetected"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:text="Detected: None"
+                    android:textColor="@color/hazard_amber"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
                 <!-- Divider between Telemetry & Filter Controls -->
                 <View
@@ -435,7 +431,7 @@
                     android:layout_marginVertical="8dp"
                     android:background="@color/card_stroke" />
 
-                <!-- Row 2: Sensitivity Filter Chips -->
+                <!-- Row 3: Sensitivity Segmented Control Bar -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -445,59 +441,70 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="10dp"
+                        android:layout_marginEnd="8dp"
                         android:letterSpacing="0.02"
                         android:text="Sensitivity:"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp"
                         android:textStyle="bold" />
 
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chipGroupConfidence"
-                        android:layout_width="wrap_content"
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/toggleSensitivity"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:checkedButton="@id/btnRecall"
+                        app:selectionRequired="true"
                         app:singleSelection="true">
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipConfidence30"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/filter_confidence_low"
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRecall"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="36dp"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:paddingHorizontal="4dp"
+                            android:paddingVertical="0dp"
+                            android:text="Recall (25%)"
                             android:textColor="@color/white"
-                            android:textSize="11sp"
-                            app:chipBackgroundColor="@color/hud_chip_inactive"
-                            app:chipCornerRadius="14dp"
-                            app:chipStrokeColor="@color/card_stroke"
-                            app:chipStrokeWidth="1dp" />
+                            android:textSize="10.5sp"
+                            android:textStyle="bold"
+                            app:strokeColor="@color/card_stroke" />
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipConfidence50"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:checked="true"
-                            android:text="@string/filter_confidence_mid"
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnBalanced"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="36dp"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:paddingHorizontal="4dp"
+                            android:paddingVertical="0dp"
+                            android:text="Balanced (45%)"
                             android:textColor="@color/white"
-                            android:textSize="11sp"
-                            app:chipBackgroundColor="@color/hud_chip_inactive"
-                            app:chipCornerRadius="14dp"
-                            app:chipStrokeColor="@color/card_stroke"
-                            app:chipStrokeWidth="1dp" />
+                            android:textSize="10.5sp"
+                            android:textStyle="bold"
+                            app:strokeColor="@color/card_stroke" />
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipConfidence70"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/filter_confidence_high"
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnStrict"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="36dp"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:paddingHorizontal="4dp"
+                            android:paddingVertical="0dp"
+                            android:text="Strict (65%)"
                             android:textColor="@color/white"
-                            android:textSize="11sp"
-                            app:chipBackgroundColor="@color/hud_chip_inactive"
-                            app:chipCornerRadius="14dp"
-                            app:chipStrokeColor="@color/card_stroke"
-                            app:chipStrokeWidth="1dp" />
-                    </com.google.android.material.chip.ChipGroup>
+                            android:textSize="10.5sp"
+                            android:textStyle="bold"
+                            app:strokeColor="@color/card_stroke" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

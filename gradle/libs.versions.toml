@@ -11,6 +11,7 @@ constraintlayout = "2.1.4"
 camerax = "1.4.1"
 media3 = "1.5.1"
 coil = "2.7.0"
+tensorflowLite = "2.16.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +35,9 @@ androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.re
 
 # Coil
 coil = { group = "io.coil-kt", name = "coil", version.ref = "coil" }
+
+# TensorFlow Lite
+tensorflow-lite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tensorflowLite" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

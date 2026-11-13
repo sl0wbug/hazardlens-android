@@ -34,6 +34,9 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    androidResources {
+        noCompress += "tflite"
+    }
 }
 
 dependencies {
@@ -55,6 +58,9 @@ dependencies {
 
     // Coil Image Loading
     implementation(libs.coil)
+
+    // TensorFlow Lite
+    implementation(libs.tensorflow.lite)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
