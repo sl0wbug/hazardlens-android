@@ -1,15 +1,23 @@
 package com.droidlinkstd.hazardlens
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.media.AudioManager
 import android.media.MediaMetadataRetriever
+import android.media.ToneGenerator
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
@@ -31,7 +39,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import coil.load
 import com.droidlinkstd.hazardlens.data.Detection
 import com.droidlinkstd.hazardlens.databinding.ActivityMainBinding
+import com.droidlinkstd.hazardlens.databinding.DialogSettingsBinding
 import com.droidlinkstd.hazardlens.detector.HazardDetector
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import java.util.concurrent.Executors
@@ -43,6 +53,9 @@ class MainActivity : AppCompatActivity() {
         private const val MODE_CAMERA = 0
         private const val MODE_IMAGE = 1
         private const val MODE_VIDEO = 2
+        private const val PREFS_NAME = "hazardlens_prefs"
+        private const val KEY_HAPTICS = "pref_haptics_enabled"
+        private const val KEY_AUDIO = "pref_audio_enabled"
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -53,6 +66,13 @@ class MainActivity : AppCompatActivity() {
     private var hasSelectedImage = false
     private var hasSelectedVideo = false
     private var isCameraActive = false
+
+    // Alert Feedback Settings (Persisted in SharedPreferences)
+    private var isHapticsEnabled = true
+    private var isAudioEnabled = true
+    private var toneGenerator: ToneGenerator? = null
+    private var lastAlertTimeMs = 0L
+    private val alertDebounceMs = 1500L
 
     // Hazard Detector & Async Worker
     private var detector: HazardDetector? = null
@@ -144,6 +164,7 @@ class MainActivity : AppCompatActivity() {
 
         detector = HazardDetector(this)
 
+        loadAlertSettings()
         setupTabNavigation()
         setupActionButtons()
         setupSensitivityControls()
@@ -229,8 +250,8 @@ class MainActivity : AppCompatActivity() {
             launchMediaPicker()
         }
 
-        binding.btnInfoSpecs.setOnClickListener {
-            showArchitectureSpecsDialog()
+        binding.btnSettings.setOnClickListener {
+            showSettingsDialog()
         }
 
         binding.imageView.setOnClickListener {
@@ -238,37 +259,109 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showArchitectureSpecsDialog() {
-        val det = detector
-        val modelStatus = if (det != null && det.isLoaded) {
-            "Active (${det.modelFileName})"
-        } else {
-            "Pending (place your .tflite in app/src/main/assets/)"
-        }
-        val classesStatus = det?.labels?.joinToString(", ") ?: "Pothole, Speed Breaker, Manhole, Road Crack"
+    private fun loadAlertSettings() {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        isHapticsEnabled = prefs.getBoolean(KEY_HAPTICS, true)
+        isAudioEnabled = prefs.getBoolean(KEY_AUDIO, true)
+    }
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.dialog_specs_title))
-            .setMessage(
-                """
-                • System Architecture:
-                   On-device Mobile Edge Computer Vision (Zero Cloud Dependency for Highway Reliability)
-                
-                • Model Status:
-                   $modelStatus
-                
-                • Targeted Domain & Classes:
-                   $classesStatus
-                
-                • Vision Execution Pipeline:
-                   - Ingestion: CameraX ImageAnalysis (RGBA_8888)
-                   - Preprocessing: Letterbox 640x640 Normalization
-                   - Core Model: Ultralytics YOLO (YOLOv8 / YOLOv11) converted to TFLite
-                   - Output: Non-Maximum Suppression HUD & Warning Banner
-                """.trimIndent()
-            )
-            .setPositiveButton("Understood", null)
-            .show()
+    private fun saveAlertSettings(haptics: Boolean, audio: Boolean) {
+        isHapticsEnabled = haptics
+        isAudioEnabled = audio
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit()
+            .putBoolean(KEY_HAPTICS, haptics)
+            .putBoolean(KEY_AUDIO, audio)
+            .apply()
+    }
+
+    private fun showSettingsDialog() {
+        val bottomSheet = BottomSheetDialog(this)
+        val dialogBinding = DialogSettingsBinding.inflate(layoutInflater)
+        bottomSheet.setContentView(dialogBinding.root)
+
+        // Set current toggle states
+        dialogBinding.switchHaptics.isChecked = isHapticsEnabled
+        dialogBinding.switchAudio.isChecked = isAudioEnabled
+
+        dialogBinding.switchHaptics.setOnCheckedChangeListener { _, isChecked ->
+            saveAlertSettings(isChecked, isAudioEnabled)
+            if (isChecked) {
+                triggerHapticFeedback()
+            }
+        }
+
+        dialogBinding.switchAudio.setOnCheckedChangeListener { _, isChecked ->
+            saveAlertSettings(isHapticsEnabled, isChecked)
+            if (isChecked) {
+                triggerAudioBeep()
+            }
+        }
+
+        // Active model information
+        val det = detector
+        if (det != null && det.isLoaded) {
+            val modelName = det.modelFileName ?: "hazardlens_yolov8n_544.tflite"
+            dialogBinding.tvModelNameDetail.text = modelName
+            dialogBinding.tvModelClassesDetail.text = "Classes (${det.labels.size}): ${det.labels.joinToString(", ")}"
+        } else {
+            dialogBinding.tvModelNameDetail.text = "No active model"
+            dialogBinding.tvModelClassesDetail.text = "Classes: None"
+        }
+
+        dialogBinding.btnCloseSettings.setOnClickListener {
+            bottomSheet.dismiss()
+        }
+
+        bottomSheet.show()
+    }
+
+    private fun triggerHazardAlerts() {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastAlertTimeMs < alertDebounceMs) return
+        lastAlertTimeMs = now
+
+        if (isHapticsEnabled) {
+            triggerHapticFeedback()
+        }
+        if (isAudioEnabled) {
+            triggerAudioBeep()
+        }
+    }
+
+    private fun triggerHapticFeedback() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+                vibratorManager?.defaultVibrator?.vibrate(
+                    VibrationEffect.createOneShot(120L, VibrationEffect.DEFAULT_AMPLITUDE)
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator?.vibrate(
+                        VibrationEffect.createOneShot(120L, VibrationEffect.DEFAULT_AMPLITUDE)
+                    )
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator?.vibrate(120L)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Haptic feedback error", e)
+        }
+    }
+
+    private fun triggerAudioBeep() {
+        try {
+            if (toneGenerator == null) {
+                toneGenerator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80)
+            }
+            toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP2, 160)
+        } catch (e: Exception) {
+            Log.e(TAG, "Audio beep error", e)
+        }
     }
 
     private fun toggleFlashlight() {
@@ -609,6 +702,7 @@ class MainActivity : AppCompatActivity() {
             binding.tvDetected.text = "Detected: $summary"
             binding.layoutHazardAlert.isVisible = true
             binding.tvAlertBannerText.text = "HAZARD DETECTED: ${detections.first().label.uppercase()}"
+            triggerHazardAlerts()
         }
     }
 
@@ -690,6 +784,12 @@ class MainActivity : AppCompatActivity() {
         detectorExecutor.shutdown()
         detector?.close()
         detector = null
+        try {
+            toneGenerator?.release()
+            toneGenerator = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error releasing ToneGenerator", e)
+        }
         releasePlayer()
     }
 }
